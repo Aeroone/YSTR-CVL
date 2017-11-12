@@ -1,0 +1,9 @@
+{
+  "question": "What color is the large rubber sphere?",
+  "order_a2b": "Make the large gray rubber sphere into gray.",
+  "description_b": "The large rubber sphere is gray.",
+  "answer_a": "It is gray.",
+  "description_a": "The large rubber sphere is gray.",
+  "order_b2a": "Make the large gray rubber sphere into gray.",
+  "answer_b": "It is gray."
+}

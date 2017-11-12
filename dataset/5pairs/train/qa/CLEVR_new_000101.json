@@ -1,0 +1,9 @@
+{
+  "question": "What material is the large brown cube?",
+  "order_a2b": "Make the large brown rubber cube into MyMetal.",
+  "description_b": "The large brown cube is metal.",
+  "answer_a": "It is Rubber.",
+  "description_a": "The large brown cube is rubber.",
+  "order_b2a": "Make the large brown metal cube into Rubber.",
+  "answer_b": "It is MyMetal."
+}

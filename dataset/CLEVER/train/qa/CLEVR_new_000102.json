@@ -1,0 +1,9 @@
+{
+  "question": "What material is the large purple sphere?",
+  "order_a2b": "Make the large purple metal sphere into Rubber.",
+  "description_b": "The large purple sphere is rubber.",
+  "answer_a": "It is MyMetal.",
+  "description_a": "The large purple sphere is metal.",
+  "order_b2a": "Make the large purple rubber sphere into MyMetal.",
+  "answer_b": "It is Rubber."
+}
