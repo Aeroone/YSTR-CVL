@@ -207,6 +207,24 @@ if __name__ == '__main__':
             avg_D_real_mismatch_loss += real_mismatch_loss.data[0]
             real_mismatch_loss.backward()
 
+
+
+
+            # ------------- exchange description for enhancement -------------
+            real_mismatch_logit = D(img1_D, text_feat2)
+            real_mismatch_loss = 0.5 * F.binary_cross_entropy_with_logits(real_mismatch_logit, ZEROS)
+            avg_D_real_mismatch_loss += real_mismatch_loss.data[0]
+            real_mismatch_loss.backward()
+
+            real_mismatch_logit = D(img2_D, text_feat1)
+            real_mismatch_loss = 0.5 * F.binary_cross_entropy_with_logits(real_mismatch_logit, ZEROS)
+            avg_D_real_mismatch_loss += real_mismatch_loss.data[0]
+            real_mismatch_loss.backward()
+
+
+
+
+
             # ------------- fake images ------------
             img1_G = Variable(vgg_normalize(img1.data)) if config.use_vgg else img1_D
             img2_G = Variable(vgg_normalize(img2.data)) if config.use_vgg else img2_D
