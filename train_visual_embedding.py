@@ -8,6 +8,7 @@ from model_VisualSemanticEmbedding import VisualSemanticEmbedding
 from dataloader_CLEVER import dataloader_CLEVER
 import config
 import torchtext.vocab as Vocab
+from tqdm import tqdm
 
 def pairwise_ranking_loss(margin, x, v):
 
@@ -34,6 +35,8 @@ def pairwise_ranking_loss(margin, x, v):
 
 if __name__ == '__main__':
 
+    f = open("result/MSE_training.txt", 'wb')
+
     print('Loading the ' + str(config.pretrained_word_model) + ' model...')
     glove = Vocab.GloVe(name='6B', dim = 300)
     word_embedding = Vocab.Vectors(name = config.pretrained_word_model)
@@ -43,8 +46,8 @@ if __name__ == '__main__':
                                    config.max_words_length,
                                    word_embedding,
                                    transforms.Compose([
-                                       transforms.Scale(256),
-                                       transforms.RandomCrop(224),
+                                       transforms.Scale(240),
+                                       #transforms.RandomCrop(224),
                                        transforms.RandomHorizontalFlip(),
                                        transforms.ToTensor(),
                                        transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -75,7 +78,7 @@ if __name__ == '__main__':
     print("start training the visual semantic embedding model!...")
     for epoch in range(config.VSE_num_epochs):
         avg_loss = 0
-        for i, (img1, text1, len_text1, img2, text2, len_text2) in enumerate(VSE_train_loader):
+        for i, (img1, text1, len_text1, img2, text2, len_text2) in tqdm(enumerate(VSE_train_loader)):
 
             img1 = Variable(img1.cuda() if config.is_cuda else img1)
             text1 = Variable(text1.cuda() if config.is_cuda else text1)
@@ -85,6 +88,8 @@ if __name__ == '__main__':
             # -------------------- img1, text1 pairs -----------------------
             len_text1, indices = torch.sort(len_text1, 0, True)
             indices = indices.numpy()
+            #indices = torch.LongTensor(torch.from_numpy(indices))
+
             img1 = img1[indices, ...]
             description = text1[indices, ...].transpose(0, 1)
             description = nn.utils.rnn.pack_padded_sequence(description, len_text1.numpy())
@@ -105,6 +110,8 @@ if __name__ == '__main__':
             # -------------------- img2, text2 pairs -----------------------
             len_text2, indices = torch.sort(len_text2, 0, True)
             indices = indices.numpy()
+            #indices = torch.LongTensor(torch.from_numpy(indices))
+
             img2 = img2[indices, ...]
             description = text2[indices, ...].transpose(0, 1)
             description = nn.utils.rnn.pack_padded_sequence(description, len_text2.numpy())
@@ -122,6 +129,9 @@ if __name__ == '__main__':
             optimizer.step()
             # --------------------------------------------------------------
 
+        f.write(str(avg_loss) + "\n")
         print('Epoch [%d/%d], Loss: %.4f'% (epoch + 1, config.VSE_num_epochs, avg_loss))
 
         torch.save(VSE_model.state_dict(), config.VSE_model_filename)
+
+    f.close()

@@ -52,8 +52,8 @@ class dataloader_CLEVER(data.Dataset):
                     ########################
 
                     # ------ image ------
-                    img1_path = os.path.join(img_root, file[0:-5] + "_aN.jpg") # change .json to .png
-                    img2_path = os.path.join(img_root, file[0:-5] + "_bN.jpg")
+                    img1_path = os.path.join(img_root, file[0:-5] + "_a.jpg") # change .json to .png
+                    img2_path = os.path.join(img_root, file[0:-5] + "_b.jpg")
 
                     output.append({
                         'img1': img1_path,
@@ -96,14 +96,14 @@ class dataloader_CLEVER(data.Dataset):
 
         # img1
         img1 = Image.open(item['img1'])
-        #img1 = img1.convert('RGB')
+        img1 = img1.convert('RGB')
         img1 = self.img_transform(img1)
         text1 = item['text1']
         len_text1 = item['len_text1']
 
         # img2
         img2 = Image.open(item['img2'])
-        #img2 = img2.convert('RGB')
+        img2 = img2.convert('RGB')
         img2 = self.img_transform(img2)
         text2 = item['text2']
         len_text2 = item['len_text2']
