@@ -15,7 +15,7 @@ from model_VisualSemanticEmbedding import VisualSemanticEmbedding
 from dataloader_CLEVER import dataloader_CLEVER
 import torchtext.vocab as Vocab
 
-from model_COMBINE_ATTENTION import Generator, Discriminator
+from model_COMBINE_ATTENTION_3 import Generator, Discriminator
 from tqdm import tqdm
 import config
 
@@ -207,6 +207,9 @@ if __name__ == '__main__':
             avg_D_real_mismatch_loss += real_mismatch_loss.data[0]
             real_mismatch_loss.backward()
 
+
+
+
             # ------------- exchange description for enhancement -------------
             real_mismatch_logit = D(img1_D, text_feat2)
             real_mismatch_loss = 0.5 * F.binary_cross_entropy_with_logits(real_mismatch_logit, ZEROS)
@@ -231,9 +234,6 @@ if __name__ == '__main__':
             fake1_loss = 0.5 * F.binary_cross_entropy_with_logits(fake1_logit, ZEROS)
             avg_D_fake_loss += fake1_loss.data[0]
             fake1_loss.backward()
-
-
-
 
 
             fake2, _ = G(img2_G, text_feat2, text_feat1)
