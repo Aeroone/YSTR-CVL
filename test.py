@@ -1,5 +1,6 @@
 import numpy as np
 
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,7 +16,7 @@ from model_VisualSemanticEmbedding import VisualSemanticEmbedding
 from dataloader_CLEVER import dataloader_CLEVER
 import torchtext.vocab as Vocab
 
-from model_COMBINE import Generator, Discriminator
+from model_COMBINE_ATTENTION_3 import Generator, Discriminator
 from tqdm import tqdm
 import config
 
@@ -75,13 +76,7 @@ def preprecessing(img1, text1, len_text1, img2, text2, len_text2, text_encoder):
     return img1, text_feat1, text_feat1_mismatch, img2, text_feat2, text_feat2_mismatch
 
 
-# ----------------------------------------------------------
-if __name__ == '__main__':
-
-    f = open("result/Combined_training.txt", 'wb')
-
-    print('Loading the ' + str(config.pretrained_word_model) + ' model...')
-    word_embedding = Vocab.Vectors(name = config.pretrained_word_model)
+def testOnModel(word_embedding, G_model, text_encoder, G_index):
 
     test_data = dataloader_CLEVER(config.img_test_root,
                                    config.text_test_root,
@@ -96,18 +91,10 @@ if __name__ == '__main__':
                                          std=[0.229, 0.224, 0.225])
 
     test_loader = data.DataLoader(test_data,
-                                batch_size = 4,
-                                shuffle = True,
+                                batch_size = config.batchsize_test,
+                                shuffle = False,
                                 num_workers = config.test_num_workers)
 
-    print('Loading a pretrained text embedding model...')
-
-    text_encoder = VisualSemanticEmbedding(config.VSE_embedding_dim)
-    text_encoder.load_state_dict(torch.load(config.VSE_model_filename))
-    text_encoder = text_encoder.text_encoder
-    for param in text_encoder.parameters():
-        param.requires_grad = False
-    word_embedding = None
 
     #######################################
     ### pretrained text embedding model ###
@@ -117,8 +104,12 @@ if __name__ == '__main__':
 
     #############################
     ###  initialize the model ###
+    print "###########"
+    print G_model
+    print "###########"
+
     G = Generator()
-    G.load_state_dict(torch.load(config.test_G_model))
+    G.load_state_dict(torch.load(G_model))
     for param in G.parameters():
         param.requires_grad = False
 
@@ -137,8 +128,10 @@ if __name__ == '__main__':
         img1, text_feat1, text_feat1_mismatch, img2, text_feat2, text_feat2_mismatch = \
             preprecessing(img1, text1, len_text1, img2, text2, len_text2, text_encoder)
 
-        save_image(img1.data, config.test_result_root + '/img1_%d.jpg' % (i))
-        save_image(img2.data, config.test_result_root + '/img2_%d.jpg' % (i))
+
+        if i == 0:
+            save_image(img1.data, config.test_result_root + '/' + 'img1_' + G_index[:-4] + '_%d.jpg' % (i))
+            save_image(img2.data, config.test_result_root + '/' + 'img2_' + G_index[:-4] + '_%d.jpg' % (i))
 
 
         img1_G = Variable(vgg_normalize(img1.data))
@@ -147,7 +140,8 @@ if __name__ == '__main__':
         # ------------- img1, text1, text2 pairs ------------
         fake, (z_mean1, z_log_stddev1, z_mean2, z_log_stddev2) = G(img1_G, text_feat1, text_feat2)
 
-        save_image(fake.data, config.test_result_root + '/fake_img2_%d.jpg' % (i))
+        if i == 0:
+            save_image(fake.data, config.test_result_root + '/' + 'fake_img2_' + G_index[:-4] + '_%d.jpg' % (i))
 
 
         #############################################
@@ -159,7 +153,8 @@ if __name__ == '__main__':
         # ------------- img2, text2, text1 pairs -------------
         fake, (z_mean1, z_log_stddev1, z_mean2, z_log_stddev2) = G(img2_G, text_feat2, text_feat1)
 
-        save_image(fake.data, config.test_result_root + '/fake_img1_%d.jpg' % (i))
+        if i == 0:
+            save_image(fake.data, config.test_result_root + '/' + 'fake_img1_' + G_index[:-4] + '_%d.jpg' % (i))
 
         #############################################
         ### Calculate the L1 reconstruction error ###
@@ -169,7 +164,39 @@ if __name__ == '__main__':
 
         count = count + 2
 
-    print " --- the final loss is: ---"
+    print " --- the final loss " +  str(G_index) + " is: ---"
     print reconstruction_loss.data[0] / count
+    return reconstruction_loss.data[0] / count
 
 
+# ----------------------------------------------------------
+if __name__ == '__main__':
+
+    f = open(config.test_result_root + "/loss_test.txt", 'wb')
+
+    print('Loading the ' + str(config.pretrained_word_model) + ' model...')
+    word_embedding = Vocab.Vectors(name = config.pretrained_word_model)
+
+
+    print('Loading a pretrained text embedding model...')
+    text_encoder = VisualSemanticEmbedding(config.VSE_embedding_dim)
+    text_encoder.load_state_dict(torch.load(config.VSE_model_filename))
+    text_encoder = text_encoder.text_encoder
+    for param in text_encoder.parameters():
+        param.requires_grad = False
+    # word_embedding = None
+
+
+    files = os.listdir(config.test_G_model_root)
+    count = 1
+    for file in files:
+        if not os.path.isdir(file) and file != ".DS_Store":
+
+            name = file[0:8] + str(count) + file[-4:]
+            print "------- model: " + str(name) + " -------"
+            test_loss = testOnModel(word_embedding, config.test_G_model_root + "/" + name, text_encoder, name)
+            f.write(str(test_loss) + "\n")
+
+            count = count + 20
+
+    f.close()
